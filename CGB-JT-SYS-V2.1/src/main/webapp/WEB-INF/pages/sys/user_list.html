@@ -1,0 +1,213 @@
+<div class="row">
+	<div class="col-xs-12">
+		<div class="box">
+			<div class="box-header">
+				<h3 class="box-title">用户管理</h3>
+
+				<div class="box-tools">
+					<div class="input-group input-group-sm" style="width: 350px;">
+						<input type="text" name="table_search" id="searchNameId"
+							class="form-control pull-right" placeholder="用户名">
+
+						<div class="input-group-btn">
+							<button type="button" class="btn btn-default btn-search">
+                                <i class="fa fa-search"></i>
+							</button>
+							<button type="button" class="btn btn-default btn-add">添加</button>
+							<button type="button" class="btn btn-default btn-update">修改</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- /.box-header -->
+			<div class="box-body table-responsive no-padding">
+				<table class="table table-hover">
+					<thead>
+						<tr>
+							<th>ID</th>
+							<th>用户名</th>
+							<th>部门</th>
+							<th>邮箱</th>
+							<th>手机号</th>
+							<th>状态</th>
+							<th>创建时间</th>
+							<th>修改时间</th>
+							<th>操作</th>
+						</tr>
+					</thead>
+					<tbody id="tbodyId"></tbody>
+				</table>
+			</div>
+			<div id="pageId" class="box-footer clearfix">
+			</div>
+			<!-- /.box-body -->
+		</div>
+		<!-- /.box -->
+	</div>
+</div>
+<script type="text/javascript">
+   $(document).ready(function(){
+	   $("#pageId").load("doPageUI.do",function(){
+		   doGetObjects();
+	   });
+	   $(".input-group-btn")
+	   .on("click",".btn-search",doQueryObjects)
+	   .on("click",".btn-add,.btn-update",doLoadEditUI);
+	   //相当于删除操作
+	   $("tbody").on("click",".btn-valid",doValidById);
+   });
+   
+   //加载页面数据
+ //页面加载完成异步加载当前页数据
+   function doGetObjects(){
+	   var url="user/doFindPageObjects.do";
+	   //获取pageCurrent的值
+	   var pageCurrent=$("#pageId").data("pageCurrent");
+	   //如果pageCurrent没有数据,给它初始化为1
+	   if(!pageCurrent)pageCurrent=1;
+	   //把pageCurrent数据放到params中
+	   var params={"pageCurrent":pageCurrent}
+	   //其实这里是给查询关键字功能用的
+	   params.username=$("#searchNameId").val().trim();
+	   $.getJSON(url,params,function(result){
+		   //console.log(result);
+		   doHandleResponseResult(result);
+	   });
+   }
+   function doHandleResponseResult(result){
+	   if(result.state==1){
+		  doSetTableBodyRows(result.data.records);
+		  //这个方法在common/page.html中
+		  doSetPagination(result.data);
+		}else{
+		  alert(result.message);
+	   }
+   }
+   //通过服务端返回的数据初始化页面
+   function doSetTableBodyRows(data){
+	  //1.获取tbody对象，并清空内容
+	  var tBody=$("#tbodyId");
+	  tBody.empty();
+	  //2.迭代data内容将数据追加到tbody中
+	  for(var i in data){
+		  var tr=$("<tr></tr>");
+		  tr.data("rowData",data[i]);
+		  var tds=doCreateTds(data[i]);
+		  tr.append(tds);//tr挂上一些td
+		  tBody.append(tr);
+	  }
+   }
+   function doCreateTds(row){
+	   //console.log(row);
+	   var tds="<td><input type='radio' name='radioId' value='"+row.id+"' ></td>"+
+	     "<td>"+row.username+"</td>"+
+	     "<td>"+row.sysDept.name+"</td>"+
+	     "<td>"+row.email+"</td>"+
+	     "<td>"+row.mobile+"</td>"+
+	     //vadid为1,用户状态是启用,0是禁用
+	     "<td>"+(row.valid?"启用":"禁用")+"</td>"+
+	     "<td>"+new Date(row.createdTime).toLocaleString()+"</td>"+
+	     "<td>"+new Date(row.modifiedTime).toLocaleString()+"</td>"+
+	     "<td><button type='button' class='btn btn-default btn-valid'>"
+	     //如果用户状态是启用状态-1,那么可以点禁用,反之~~
+	     +(row.valid?"禁用":"启用")+"</button></td>"; 
+       return tds;
+   }
+ //处理查询按钮事件
+   function doQueryObjects(){
+	   $("#pageId").data("pageCurrent",1);
+	   doGetObjects();
+   }
+ 
+ //禁用和启用操作
+   function doValidById(){
+	   //params
+	   var rowData=$(this).parents("tr").data("rowData");
+	   var id=rowData.id;
+	   //如果原来的valid是启用-1,那么点击按钮后,newValid=禁用-0
+	   var newValid=rowData.valid?0:1;//这个新valid是用来传给服务端的
+	   var params={"id":rowData.id,"valid":newValid};
+	   //url
+	   var url="user/doValidById.do";
+	   //ajax request
+       var btn=$(this);//获取点击的button对象,有什么用啊?
+	   $.post(url,params,function(result){
+    	   if(result.state==1){
+    		   //console.log(result)
+    		   alert(result.message);
+    		   //doGetObjects();//重新查询刷新
+    		   //优化方式实现(局部刷新:修改button显示,修改td内容显示)
+    		   doEditRow(btn,rowData.valid);//这个valid还是旧的valid
+    	   }else{
+    		   alert(result.message);
+    	   }
+       },"json")    
+   }    
+   function doEditRow(obj,valid){//这个valid是原来的,旧的valid
+	   //2.修改tr中第5个td中的内容(查询API文档)
+	   var tr=$(obj).parents("tr");
+   //如果原来是启用1状态,那么现在改为禁用
+	   tr.find("td:eq(5)").text(valid?"禁用":"启用");
+	   //1.修改按钮上的内容,如果原来是启用状态,那么按钮上是禁用,
+	   //现在改为启用
+	   $(obj).html(valid?"启用":"禁用");
+	   //3.获取当前行tr对象，然后重新绑定新的值
+	   var rowData=tr.data("rowData")
+	   //console.log(11)
+	   //console.log(rowData)
+	   rowData.valid=valid?0:1;//这不是多此一举吗
+	   //console.log(12)
+	   //console.log(rowData)
+	   tr.data("rowData",rowData);
+   }
+   
+   function doLoadEditUI(){
+	   //1.判定点击的对象
+	   var title;
+	   if($(this).hasClass("btn-add")){
+		   title="添加用户";
+		   doLoadPage(title);
+	   }else if($(this).hasClass("btn-update")){
+		   title="修改用户";
+		   var id=doGetCheckedId();
+		   //console.log("id="+id)
+		   if(!id){
+			  alert("请先选择");
+			  return;
+		   }
+		   //基于id进行查询并加载编辑页面
+		   doFindObjectById(id,title);
+	   }
+   }
+   function doLoadPage(title){
+	   var url="user/doUserEditUI.do"
+	   $("#mainContentId").load(url,function(){
+		   $(".box-title").html(title);
+	   }) 
+   }
+   function doGetCheckedId(){
+	 return $("tbody input[name='radioId']:checked").val();
+   }
+   
+   function doFindObjectById(id,title){
+	   //1.params
+	   var params={"id":id};
+	   //2.url//为什么要去数据库查,因为用户对应的角色信息,
+	   //用户列表页面中没有
+	   var url="user/doFindObjectById.do";
+	   //3.ajax request
+	   $.getJSON(url,params,function(result){//JsonResult
+		   if(result.state==1){
+			  $("#mainContentId").data("rowData",result.data); 
+	          doLoadPage(title);
+		   }else{
+			  alert(result.message);
+		   }
+	   });
+   }
+   
+</script>
+
+
+
+

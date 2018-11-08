@@ -1,0 +1,293 @@
+<div class="row">
+	<div class="col-xs-12">
+		<div class="box">
+			<div class="box-header">
+				<h3 class="box-title">商品菜单</h3>
+
+				<div class="box-tools">
+					
+					<div class="input-group input-group-sm" style="width: 350px;">
+						
+						<input type="text" name="table_search" id="searchNameId"
+							class="form-control pull-right" placeholder="参数名">
+						<!-- <div>
+							<button type="button">生成excel</button>
+						</div> -->
+						<div class="input-group-btn">
+							<!-- 这是一个放大镜查询的按钮 -->
+							<button type="button" class="btn btn-default btn-search">
+								<i class="fa fa-search"></i>
+							</button>
+							<button type="button" class="btn btn-default btn-delete">删除</button>
+							<button type="button" class="btn btn-default btn-add">添加</button>
+							<button type="button" class="btn btn-default btn-excel">导出文件</button>
+							<input type="text" id="excelUrl" style="display: none;"
+							class="form-control pull-right" value="C:/Users/UID/Workspaces/MyEclipse CI/.metadata/.me_tcat85/wtpwebapps/CGB-JT-SYS-V2.0/prod_menus.xls">
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- /.box-header -->
+			<div class="box-body table-responsive no-padding">
+				<form>
+					<table class="table table-hover table-bordered">
+						<thead>
+							<tr>
+								<th><input type="checkbox" id="checkAll">全选</th>
+								<th>商品名称</th>
+								<th>商品种类</th>
+								<th>商品单价</th>
+								<th>库存数量</th>
+								<th>描述信息</th>
+								<th>操作</th>
+							</tr>
+						</thead>
+						<!-- doGetObjects在此处添加数据 -->
+						<tbody id="tbodyId">
+						</tbody>
+					</table>
+				</form>
+			</div>
+			<!-- /.box-body -->
+			<div id="pageId" class="box-footer clearfix"></div>
+		</div>
+		<!-- /.box -->
+	</div>
+</div>
+
+
+<script type="text/javascript">
+//有先后顺序,先执行doPageUI,后doGetObjects();
+	$(function() {
+		//下方首页/上一页/下一页等内容
+		$("#pageId").load("doPageUI.do",function(){
+			doGetObjects();
+		});
+		//查询按钮事件注册
+		$(".input-group-btn")
+		.on("click",".btn-search",doQueryObjects)
+		//删除按钮时间注册
+		.on("click",".btn-delete",doDeleteObjects)
+		//添加按钮时间注册
+		.on("click",".btn-add",doShowEditDialog)
+		$("thead").on("change","#checkAll",doCheckAll)
+		$("#tbodyId").on("change",".cBox",doChangeCheckAllState)
+		$("#tbodyId").on("click",".btn-update",doShowEditDialog)
+		
+		//加入购物车
+		$("#tbodyId").on("click",".btn-addcar",doAddObject)
+		
+		//生成商品菜单excel
+		$(".btn-excel").click(function(result){
+			var excelUrl = $("#excelUrl").val()
+			var params = {"excelUrl":excelUrl};
+			var url = "prod/menu/doExcel.do";
+			$.post(url,params,function(result){//接收服务端发送过来的result值
+				location="prod_menus.xls";
+			},"json");
+		})
+		doShowCheckBoxs()
+	});
+	function doShowCheckBoxs(){
+		var userId = $(".user-panel .pull-left p").prop("id")
+		if(userId!=1) {
+			$("#checkAll").parents("th").css("display","none")
+			$(".btn-delete,.btn-add").css("display","none")
+		}
+	}
+	function doGetObjects() {
+		//1.定义请求参数
+		//var params = "pageCurrent=1&name=o";
+		//jquery中的data函数
+		var pageCurrent=$("#pageId").data("pageCurrent");
+		//undefine就是false
+		if(!pageCurrent) pageCurrent=1;
+		
+		var params = {"pageCurrent":pageCurrent};//两种写法
+		
+		var searchName = $("#searchNameId").val();
+		//假如文本框有值,则将值添加到请求参数中
+		if(searchName) params.name=searchName;//name要和controller一致
+		//2.定义请求资源路径url
+		var url = "prod/menu/doFindPageObjects.do";
+		//3.发起异步请求,三种方式,第一种最简便
+		//这种是ajax请求,默认方式是get,自动接收result
+//jquery中ajax的函数,JsonResult->Json String->Json Object->result
+		$.getJSON(url,params,doHandleResponseResult);
+		
+	}
+	function doHandleResponseResult(result) {//对应JsonResult(PageObject(pageCount,rowCount,records...))
+		//console.log("result="+result);
+		if (result.state == 1) {
+			//初始化当前页的记录信息
+			doSetTableBodyOkRows(result.data.records);
+			//初始化当前页的页码信息
+			doSetPagination(result.data);
+		} else {
+			alert(result.message);
+		}
+	}
+	//初始化当前页的记录信息
+	function doSetTableBodyOkRows(records) {//对应JsonResult(PageObject(pageCount,rowCount,records...))
+		//1.获取body对象,并清空内容
+		var tBody = $("#tbodyId");
+		tBody.empty();//清空记录
+		//2.迭代记录,并将数据追加到tbody
+		for ( var i in records) {
+			//2.1创建tr对象
+			var tr = $("<tr></tr>");
+			//绑定当前行数据到tr对象上
+			tr.data("rowData",records[i])
+			//2.2创建td对象
+			var tds = doCreateTds(records[i]);
+			//2.3将td追加到tr
+			tr.append(tds);
+			//2.4将tr追加到tbody
+			tBody.append(tr);
+		}
+	}
+	function doCreateTds(row) {
+		var userId = $(".user-panel .pull-left p").prop("id")
+		//console.log(userId)
+		//购物车中,如果是买家,添加购物车按钮,
+		//如果是卖家,添加修改按钮
+		var buttonBuyer = "<button type='button' class='btn btn-default btn-addcar'>加入购物车</button></td>"
+		var buttonSeller = "<button type='button' class='btn btn-default btn-update'>update</button>"
+		var button = (userId==1)?buttonSeller:buttonBuyer
+		var btn2 = (userId==1)?"<td><input type='checkbox' class='cBox' name='cItem' value='":""
+		var tds = btn2+row.id+"'></td>" + 
+				"<td>" + row.name + "</td>"+ 
+				"<td>" + row.category + "</td>"+
+				"<td>" + row.price + "</td>"+
+				"<td>" + row.pnum + "</td>"+
+				"<td style='width:400px'>" + row.description + "</td>"+
+				"<td>"+button+"</td>";
+		return tds;
+	}
+	
+	//定义查询事件处理函数
+	function doQueryObjects() {
+		//1.设置当前页码值为1
+		$("#pageId").data("pageCurrent",1)
+		//2.依据查询条件执行查询操作
+		doGetObjects();
+	}
+	
+	//删除
+	function doDeleteObjects() {
+		//1.获取用户选中的记录id
+		var ids = doGetCheckedIds();
+		//console.log("ids= "+ids)
+		//2.对值进行验证,(判定是否有选中)
+		if(ids.length==0){
+			alert("删除操作,至少选择一个")
+			return;//不继续往下执行
+		}
+		//3.异步提交删除请求
+		//3.1请求参数
+		//3.2请求参数
+		//3.3异步post请求
+		params = {"ids":ids.toString()};//必须叫"ids",必须传数组
+		//2.定义请求资源路径url
+		var url = "prod/menu/doDeleteObjects/"+ids.toString()+".do";
+		$.post(url,function(result){//接收服务端发送过来的result值
+			//jackson的post自动会将result转换成对象
+			//假如是json串,可以将它转换成对象
+			if(result.state==1){
+				alert(result.message)
+				doGetObjects();
+			}else{
+				alert(result.message)
+			}
+		});
+	}
+	/**获取选中的id值*/
+	function doGetCheckedIds() {
+		  var array = [];
+		$("#tbodyId input[type=checkbox]").each(function(){
+			//假如此元素的checked属性的值为true
+			if($(this).prop("checked")){
+				//调用数组对象的push方法将选中对象的值存储到数组
+				array.push($(this).val())
+			}
+		});
+		return array;  
+	}
+	//处理tbody中所有checkbox对象的点击事件
+	function doChangeCheckAllState(){
+		//0,指定变量并赋予值为true(假定为选中状态)
+		var flag = true;
+		//1.获取tbody中所有checkbox对象状态进行与操作的结果
+		$("#tbodyId input[type=checkbox]").each(function() {
+			flag = flag&&$(this).prop('checked')
+		});
+		//2.将tbody中checkbox最终与状态的结果影响thead中checkbox的状态.
+		$("#checkAll").prop('checked',flag);
+	}
+	function doCheckAll() {
+		//1.获取thead中全选checkbox对象的状态
+		var flag = $(this).prop('checked')//所有checkbox默认都有checked属性
+		//2.让tbody中checkbox的状态同步与thead中全选状态一致
+		$("#tbodyId input[type='checkbox']").prop('checked',flag)
+	}
+	
+	//弹出添加/编辑配置信息页面
+	function doShowEditDialog(){
+		//只有添加的版本
+		var url="prod/menu/doMenuEditUI.do"
+		var title 
+		if($(this).hasClass("btn-add")){
+			title = "添加商品信息"
+		}else{
+			title = "修改商品信息"
+			//从当前行tr中获取当前行记录
+			var rowData = $(this).parents("tr").data("rowData")
+			//将数据绑定在模态框上,编辑页面方便获取
+			$("#myModal").data("rowData",rowData)
+		}
+		$("#myModal .modal-body").load(url,function(){
+			 //设置模态框的标题
+			 $("#myModalLabel").html(title);
+			 //页面加载完成显示模态框
+		     $("#myModal").modal("show");
+		   })
+   }
+	
+	function doAddObject() {
+
+		var rowData = $(this).parents("tr").data("rowData")
+		var userId = $(".user-panel .pull-left p").prop("id")
+		
+		var params = {
+			name : rowData.name,
+			type : rowData.category,
+			price : rowData.price,
+			userId : userId
+
+		}
+		console.log(params)
+		//有数据,就是update
+		var url = "prod/menu/doInsertWuPin.do";
+		//3.将数据异步提交到url对应的地址
+		$.post(url, params, function(result) {
+			if (result.state == 1) {
+				alert(result.message)
+				doGetObjects();
+			} else {
+				alert(result.message)
+			}
+		},"json")
+	}
+	
+</script>
+
+
+
+
+
+
+
+
+
+
+

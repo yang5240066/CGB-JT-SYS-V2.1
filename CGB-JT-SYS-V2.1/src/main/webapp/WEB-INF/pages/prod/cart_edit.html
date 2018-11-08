@@ -1,0 +1,176 @@
+<!-- Horizontal Form -->
+ <div class="box box-info">
+      <!-- form start -->
+      <form class="form-horizontal">
+        <div class="box-body">
+          <div class="form-group">
+            <label for="nameId" class="col-sm-2 control-label">收货人</label>
+
+            <div class="col-sm-10">
+              <input type="text" class="form-control" name="name" id="receiverName" placeholder="名称">
+            </div>
+          </div>
+           <div class="form-group">
+            <label for="valueId" class="col-sm-2 control-label">收货地址</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" name="name" id="receiverAddress" placeholder="描述">
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="noteId" class="col-sm-2 control-label">联系方式</label>
+            <div class="col-sm-10">  
+            
+              <input type="text" class="form-control" name="note" id="receiverMobile" placeholder="描述">
+            </div>
+          </div>
+                
+                
+          
+          <div class="form-group">
+            <label for="noteId" class="col-sm-2 control-label">金额总计</label>
+            <div class="col-sm-10">  
+            <!-- ------------------------------------------------------------ -->
+            	<span class="form-control" name="note" id="totalFee">999</span>
+              <!-- <input type="text" class="form-control" name="note" id="totalFee" placeholder="描述">
+ -->            </div>
+          </div>
+          
+          
+          
+        </div>
+        <!-- /.box-body -->
+      </form>
+    </div>
+ <script type="text/javascript">
+ 
+ $(function(){
+	 //模态框的保存按钮上注册点击事件
+	 $("#myModal")
+	 .on("click",".btn-save",doSaveOrUpdate);
+	
+	 //注册模态框隐藏时的事件监听
+	 $('#myModal').on('hidden.bs.modal',function (e) {
+		 //移除myMoal对象上绑定的事件
+		 //假如不移除有可能会重现表单重复提交
+		 $("#myModal").off();
+		 //移除模态框绑定的数据
+		 $("#myModal").removeData();
+		 //$(".box-header").removeData();
+	 });
+	 //从模态框上获取绑定的数据
+	 var rowData=$("#myModal").data("rowData");
+	 //假如模态框上有数据,则初始化表单数据
+	 if(rowData)doInitEditFormData(rowData);
+	 
+	  var values=[];
+	 var tprice=0;
+	   //2.迭代所有tbody中checkbox对象并获取选中的值
+	   $("#tbodyId input[type=checkbox]")
+	   .each(function(){
+		   if($(this).prop("checked")){
+			   values.push($(this).val());
+		   }
+	   });
+	   
+	 for(var i=0;i<values.length;i++){
+	 value=values[i]
+	 var rowData = $(".box-header").data("rowData"+value)
+	 
+	 var price = rowData.price
+	 var number = rowData.number
+	 console.log(price)
+	 console.log(number)
+	
+	//var price= $("#totalFee").html(rowData.price*rowData.number)
+	 tprice=tprice+rowData.price*rowData.number
+	 console.log("tprice"+tprice)
+	 
+	  }
+	
+	 $("#totalFee").html(tprice)
+	 
+	// var value = $("input[type=checkbox]:checked").prop("value")
+	 //var rowData = $(".box-header").data("rowData"+value)
+	 //var price = rowData.price
+	 //var number = rowData.number
+	//var price= $("#totalFee").html(rowData.price*rowData.number)
+	// $("#totalFee").html(rowData.price*rowData.number)
+
+ });
+ 
+ 
+ //初始化表单数据
+ function doInitEditFormData(rowData){
+	 console.log(rowData)
+	 $("#title").val(rowData.name);
+	 $("#price").val(rowData.price);
+	 $("#number").val(rowData.number)
+ }
+ 
+ function doSaveOrUpdate(){
+	 var a=$("#receiverName").val();
+	 var b=$("#receiverAddress").val();
+	 var c=$("#receiverMobile").val();
+	 if(a==null || a==""){
+		 alert("收货人不能为空")
+		 return;
+	 }
+	 
+	 if(b==null || b==""){
+		 alert("收货地址空")
+		 return;
+	 }
+	 
+	 if(c==null || c==""){
+		 alert("联系方式不能为空")
+		 return;
+	 }
+	 
+	 //1.获得表单数据
+	 var data=doGetEditFormData();
+	 console.log(data)
+	 var rowData=$("#myModal").data("rowData");
+	 //假如是修改需要再向服务端提交一个id值
+	 
+	 if(rowData)data.id=rowData.id;
+	 //2.url
+	 var insertUrl="cart/doSaveObject.do";
+	 var updateUrl="config/doUpdateObject.do";
+	 var url=rowData?updateUrl:insertUrl;
+	 //3.异步提交数据
+	 $.post(url,data,function(result){
+		 console.log(result)
+		 if(result.state==1){
+			 alert(result.message);
+			 //doGetObjects();
+			 $("#mainContentId").load("prod/order/doOrderListUI.do")
+			 $("#myModal").modal("hide");
+		 }else{
+			 alert(result.message);
+		 }
+	 },"json");
+	 
+	 
+ }
+ //获取编辑页面表单数据
+ function doGetEditFormData(){
+	 var ids =doGetCheckedIds();
+	 console.log(ids)
+	 var params={
+		 receiverName:$("#receiverName").val(),
+		 address:$("#receiverAddress").val(),
+		 receiverMobile:$("#receiverMobile").val(),
+		 id:ids.toString()
+	 };
+	 return params;
+ }
+ </script>
+    
+    
+    
+    
+    
+    
+    
+    

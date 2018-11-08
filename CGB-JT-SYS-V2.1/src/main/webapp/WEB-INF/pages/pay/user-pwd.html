@@ -1,0 +1,73 @@
+<div class="row">
+	<div class="col-xs-12">
+		<div class="box">
+			<div class="box-header">
+				<h3 class="box-title">修改支付密码</h3>
+
+				<!-- /.box-body -->
+				<div id="pageId" class="box-footer clearfix"></div>
+				<div class="col-sm-4">
+					<div class="form-horizontal" role="form">
+						<div class="form-group">
+							<label for="" class="col-sm-4 control-label">原支付密码</label>
+							<div class="col-sm-8">
+								<input type="password" class="form-control" id="Pwd1"
+									placeholder="原支付密码">
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="" class="col-sm-4 control-label">新密码</label>
+							<div class="col-sm-8">
+								<input type="password" class="form-control" id="Pwd2"
+									placeholder="新密码">
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="" class="col-sm-4 control-label">确认密码</label>
+							<div class="col-sm-8">
+								<input type="password" class="form-control" id="Pwd3"
+									placeholder="确认密码">
+							</div>
+						</div>
+						<div class="pull-right">
+							<button class="btn btn-primary" id="update">确认修改</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- /.box -->
+		</div>
+	</div>
+
+
+<script type="text/javascript">
+	$(function(){
+		$("#Pwd3").blur(showAlert);
+		$(".pull-right").on("click","#update",doUpdatePayPassword);
+	});
+     function showAlert(){
+			var pw1 = $("#Pwd2").val();
+			var pw2 = $("#Pwd3").val();
+			if(pw1!=pw2){
+				alert("两次密码输入不相同");
+			}
+		}
+	function doUpdatePayPassword(){
+		showAlert();
+		var pw1 = $("#Pwd1").val();
+		var pw2 = $("#Pwd2").val();
+		console.log(pw2);
+		var id = $(".user-panel .pull-left p").prop("id");
+		var params={userId:id,beforePassword:pw1,afterPassword:pw2};
+		url="prod/wallet/doUpdatePayPassword.do"
+		$.post(url,params,function(result){
+			console.log(result);
+			if(result.state==1){
+				alert(result.message)
+				doLoadUI("#load-user-wallet-id", "prod/wallet/doWalletUI.do");
+			} else{
+				alert(result.message)
+			}
+		})
+	}
+</script>

@@ -1,0 +1,64 @@
+<div class="row">
+	<div class="col-xs-12">
+		<div class="box">
+			<div class="box-header">
+				<h3 class="box-title">我的钱包</h3>
+			<div id="pageId" class="box-footer clearfix"></div>
+			<div class="col-xs-6">
+				<dl class="dl-horizontal">
+  					<dt>用户名</dt>
+ 				 	<dd id="name"></dd>
+				</dl>
+				<dl class="dl-horizontal">
+  					<dt>信息</dt>
+ 				 	<dd id="info">个人信息</dd>
+				</dl>
+				<dl class="dl-horizontal">
+  					<dt>余额</dt>
+ 				 	<dd id="money"></dd>
+ 				 	<dd>
+ 				 		<button id="load-recharge-id" class="btn btn-primary btn-xs">充值</button>
+ 				 		<button id="load-history-id" class="btn btn-primary btn-xs">历史记录</button>
+ 				 		<button id="load-pwd-id" class="btn btn-primary btn-xs">修改密码</button>
+ 				 	</dd>
+				</dl>
+			</div>
+		</div>
+		<!-- /.box -->
+	</div>
+</div>
+</div>
+<script type="text/javascript">
+	$(function(){
+		doLoadUI("#load-recharge-id","prod/recharge/doRechargeUI.do");
+		doLoadUI("#load-history-id","prod/wallet/doHistoryUI.do");
+		doLoadUI("#load-pwd-id","prod/wallet/doUpdatePwdUI.do");
+		doSetUserName();
+		doGetWallet();
+		hideBtn();
+		
+	})
+	function doSetUserName(){
+		var url = "doSetUserName.do"
+		$.post(url,function(user){
+			$("#name").html(user.username);
+		},"json")
+	}
+	function doGetWallet(){
+		var id = $(".user-panel .info p").prop("id")
+		console.log(id)
+	
+		var params={userId:id}
+		var url="prod/wallet/doGetWallet.do"
+		$.post(url,params,function(result){
+			console.log(result.data.balance);
+			$("#money").html(result.data.balance);
+		},"json")
+	}
+	function hideBtn() {
+		var id = $(".user-panel .info p").prop("id");
+		if(id==1){
+			$("#load-recharge-id,#load-history-id,#load-pwd-id").css("display","none");
+		}
+	}
+</script>

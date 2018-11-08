@@ -1,0 +1,209 @@
+<!-- Horizontal Form -->
+<div class="box box-info">
+	<div class="box-header with-border">
+		<h3 class="box-title">添加菜单</h3>
+	</div>
+	<!-- /.box-header -->
+	<!-- form start -->
+	<form class="form-horizontal">
+		<div class="box-body">
+			<div class="form-group">
+				<label for="nameId" class="col-sm-2 control-label">类型</label>
+				<div class="col-sm-10 typeRadio">
+					<label class="radio-inline"> <input type="radio"
+						name="typeId" value="1" checked> 菜单
+					</label> <label class="radio-inline"> <input type="radio"
+						name="typeId" value="2"> 按钮
+					</label>
+				</div>
+			</div>
+			<div class="form-group">
+				<label for="nameId" class="col-sm-2 control-label">菜单名称</label>
+				<div class="col-sm-10">
+					<input type="text" class="form-control" id="nameId"
+						placeholder="名称">
+				</div>
+			</div>
+			<div class="form-group">
+				<label for="parentId" class="col-sm-2 control-label">上级菜单</label>
+				<div class="col-sm-10">
+					<input type="text" class="form-control load-sys-menu"
+						readonly="readonly" id="parentId" placeholder="上级菜单">
+				</div>
+			</div>
+			<div class="form-group">
+				<label for="urlId" class="col-sm-2 control-label">菜单URL</label>
+				<div class="col-sm-10">
+					<input type="text" class="form-control" id="urlId"
+						placeholder="url">
+				</div>
+			</div>
+			<div class="form-group">
+				<label for="permissionId" class="col-sm-2 control-label">授权标识：</label>
+				<div class="col-sm-10">
+					<input type="text" id="permissionId"
+						placeholder="多个用逗号分隔，如：user:list,user:create" class="form-control">
+				</div>
+			</div>
+			<div class="form-group">
+				<label for="sortId" class="col-sm-2 control-label">排序号：</label>
+				<div class="col-sm-10">
+					<input type="text" id="sortId" placeholder="排序号"
+						class="form-control">
+				</div>
+			</div>
+		</div>
+		<!-- /.box-body -->
+		<div class="box-footer">
+			<button type="button" class="btn btn-default btn-cancel">Cancel</button>
+			<button type="button" class="btn btn-info pull-right btn-save">Save</button>
+		</div>
+		<!-- /.box-footer -->
+	</form>
+	<!-- zTree 对应的div -->
+	<div class="layui-layer layui-layer-page layui-layer-molv layer-anim"
+		id="menuLayer" type="page" times="2" showtime="0" contype="object"
+		style="z-index: 59891016; width: 300px; height: 450px; top: 100px; left: 500px; display: none">
+		<div class="layui-layer-title" style="cursor: move;">选择菜单</div>
+		<div class="layui-layer-content" style="height: 358px;">
+			<div style="padding: 10px;" class="layui-layer-wrap">
+				<ul id="menuTree" class="ztree"></ul>
+				<!-- 动态加载树 -->
+			</div>
+		</div>
+		<span class="layui-layer-setwin"> <a
+			class="layui-layer-ico layui-layer-close layui-layer-close1 btn-cancel"></a></span>
+		<div class="layui-layer-btn layui-layer-btn-">
+			<a class="layui-layer-btn0 btn-confirm">确定</a> <a
+				class="layui-layer-btn1 btn-cancel">取消</a>
+		</div>
+	</div>
+</div>
+<script type="text/javascript" src="bower_components/ztree/jquery.ztree.all.min.js"></script>
+<script type="text/javascript" src="bower_components/layer/layer.js"></script>
+<script type="text/javascript">
+	var zTree;
+	//初始化zTree时会用到??   创建zTree对象
+	var setting = {
+		data : {
+			simpleData : {
+				enable : true,
+				idKey : "id", //节点数据中保存唯一标识的属性名称
+				pIdKey : "parentId", //节点数据中保存其父节点唯一标识的属性名称
+				rootPId : null
+			//根节点id
+			}
+		//json 格式javascript对象
+		}
+	}//json 格式的javascript对象
+
+	$(function() {
+		//页面加载完以后初始化页面数据(假如是修改,有数据,就初始化修改页面)
+		var rowData=$("#mainContentId").data("rowData");
+		if(rowData) doInitEditFormData(rowData); 
+		//上级菜单文本框点击事件注册
+		$(".form-horizontal").on("click", ".load-sys-menu", doLoadZtreeNodes)
+		 $("#menuLayer")//上级菜单zsTree的确定,取消按钮
+		 .on("click", ".btn-confirm", doSetSelectNode)
+		 .on("click", ".btn-cancel", doHideTree)
+		$(".box-footer")//整体添加/修改菜单的保存,取消按钮
+		.on("click",".btn-save", doSaveOrUpdate)
+		.on("click", ".btn-cancel", doCancel)
+	});
+
+	function doInitEditFormData(data){//初始化,赋值
+		//console.log(data),这个data是js从菜单列表页面获取的,
+		//创建zTree的时候,就绑定在tr的源代码上
+		//菜单的type是1,按钮的type是2
+		  $(".typeRadio input[value='"+data.type+"']").prop("checked",true);
+		  $("#nameId").val(data.name);
+		  $("#sortId").val(data.sort);
+		  $("#urlId").val(data.url);
+		  $("#permissionId").val(data.permission);
+		  $("#parentId").val(data.parentName);
+		  $("#parentId").data("parentId",data.parentId);//??
+	  }
+	
+	function doLoadZtreeNodes() {
+		 //1.显示zTree Div对象
+		$("#menuLayer").css("display", "block")
+		//2.异步加载菜单数据,并将数据显示在zTree对应的DIV对象上
+		var url = "menu/doFindZtreeMenuNodes.do"//获取id,name,parentId
+		$.getJSON(url, function(result) {
+			if (result.state == 1) {
+				//调用zTree插件中的init方法通过数据初始化树
+				 zTree = $.fn.zTree.init(
+				$("#menuTree"),//显示树的dom对象
+				setting,//zTree的配置(参考官方格式)
+				result.data);//来自服务端 //id,name,parentId
+				//console.log(result.data)
+			} else {
+				alert(result.message);
+			}
+		}) 
+	}
+
+	//设置选中的节点对象
+	function doSetSelectNode() {
+		//1.获取选中的节点对象
+		var nodes = zTree.getSelectedNodes();
+		if (nodes.length == 0) return;
+		var node = nodes[0];
+//		console.log(node);
+//		{id: 145, name: "ab", level: 0, tId: "menuTree_25", parentTId: null, …}
+		//2.将对象中内容,填充到表单
+		//绑定id,后面可能要用要将数据存储到数据库
+		$("#parentId").data("parentId", node.id);
+		$("#parentId").val(node.name);
+		//3.隐藏树对象
+		doHideTree();
+	}
+
+	//点击树div的确定和取消按钮时隐藏树对象
+	function doHideTree() {
+		$("#menuLayer").css("display", "none");
+	}
+	
+	function doSaveOrUpdate() {
+		//1.获取表单数据
+		var params = doGetEditFormData();//{...}
+		//假如是修改需要向服务端提交一个id
+		var rowData = $("#mainContentId").data("rowData")
+		if(rowData) params.id=rowData.id
+		//2.将数据异步提交到服务端
+		var updateUrl = "menu/doUpdateObject.do"
+		var insertUrl = "menu/doSaveObject.do"
+		var url=rowData?updateUrl:insertUrl;
+		$.post(url, params, function(result) {
+			if (result.state == 1) {
+				alert(result.message)
+				doCancel();
+			} else {
+				alert(result.message)
+			}
+		}, "json")
+	}
+	
+	function doGetEditFormData() {//获取数据
+		var params = {
+			type : $("form input[name='typeId']:checked").val(),
+			name : $("#nameId").val(),
+			parentId : $("#parentId").data("parentId"),
+			url : $("#urlId").val(),
+			sort : $("#sortId").val(),
+			permission : $("#permissionId").val()
+		}
+		return params;
+	}
+
+	function doCancel() {
+		//清除数据
+		$("#mainContentId").removeData();
+		//回到列表页面
+		var url = "menu/doMenuListUI.do";
+		$("#mainContentId").load(url);
+	}
+
+</script>
+
+

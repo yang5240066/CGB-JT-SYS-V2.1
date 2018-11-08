@@ -1,0 +1,124 @@
+<div class="row">
+	<div class="col-xs-12">
+		<div class="box">
+			<div class="box-header">
+				<h3 class="box-title">历史充值记录</h3>
+
+			<!-- /.box-header -->
+			<div class="box-body table-responsive no-padding">
+				<form>
+					<table class="table table-hover">
+						<thead>
+							<tr>
+								<th>充值单号</th>
+								<th>充值金额</th>
+								<th>充前余额</th>
+								<th>充后余额</th>
+								<th>充值日时间</th>
+							</tr>
+						</thead>
+						<!-- doGetObjects在此处添加数据 -->
+						<tbody id="tbodyId">
+						</tbody>
+					</table>
+				</form>
+			</div>
+			<!-- /.box-body -->
+			<div id="pageId" class="box-footer clearfix"></div>
+		</div>
+		<!-- /.box -->
+	</div>
+</div>
+</div>
+<script type="text/javascript">
+	$(function(){
+		$("#pageId").load("doPageUI.do",function(){
+			doGetObjects();
+		});
+	});
+	function doGetObjects() {
+		//1.定义请求参数
+		//var params = "pageCurrent=1&name=o";
+		//jquery中的data函数
+		var pageCurrent=$("#pageId").data("pageCurrent");
+		//undefine就是false
+		if(!pageCurrent) pageCurrent=1;
+		var id=$(".user-panel .pull-left p").prop("id");
+		var params = {"pageCurrent":pageCurrent,"userId":id};//两种写法
+		
+						
+		var url = "prod/recharge/doFindPageObjects.do";
+		//3.发起异步请求,三种方式,第一种最简便
+		//这种是ajax请求,默认方式是get,自动接收result
+//jquery中ajax的函数,JsonResult->Json String->Json Object->result
+		$.getJSON(url,params,doHandleResponseResult);
+		
+	}
+	function doHandleResponseResult(result) {//对应JsonResult(PageObject(pageCount,rowCount,records...))
+		//console.log("result="+result);
+		if (result.state == 1) {
+			//初始化当前页的记录信息
+			doSetTableBodyOkRows(result.data.records);
+			//初始化当前页的页码信息
+			doSetPagination(result.data);
+		} else {
+			alert(result.message);
+		}
+	}
+	//初始化当前页的记录信息
+	function doSetTableBodyOkRows(records) {//对应JsonResult(PageObject(pageCount,rowCount,records...))
+		//1.获取body对象,并清空内容
+		var tBody = $("#tbodyId");
+		tBody.empty();//清空记录
+		//2.迭代记录,并将数据追加到tbody
+		for ( var i in records) {
+			//2.1创建tr对象
+			var tr = $("<tr></tr>");
+			//绑定当前行数据到tr对象上
+			tr.data("rowData",records[i])
+			//2.2创建td对象
+			var tds = doCreateTds(records[i]);
+			//2.3将td追加到tr
+			tr.append(tds);
+			//2.4将tr追加到tbody
+			tBody.append(tr);
+		}
+	}
+	function doCreateTds(row) {
+		//console.log(row);
+		var a = new Date();
+		a.setTime(row.rechargeTime);
+		var b=a.toLocaleString('en-GB', { timeZone: 'Asia/Shanghai' });
+		var tds = "<td>"+row.id+"</td>" + 
+				"<td>" + row.rechargeAmount + "</td>"+ 
+				"<td>" + row.beforeBalance + "</td>"+
+				"<td>" + row.afterBalance + "</td>"+
+				"<td>" + b + "</td>";
+		return tds;
+	}
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

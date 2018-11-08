@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jt.prod.dao.ProdRechargeDao">
+	<select id="findObjectsByUserId" resultType="com.jt.prod.entity.ProdRecharge">
+		select * from prod_recharge where userId = #{userId}
+		order by rechargeTime desc
+	</select>
+	<select id="getRowCount" resultType="int">
+		select count(*) from prod_recharge where userId = #{userId}
+	</select>
+	<insert id="insertProdRecharge">
+		insert into prod_recharge (userId,rechargeTime,rechargeAmount,beforeBalance,afterBalance) 
+		value(#{userId},#{rechargeTime},#{rechargeAmount},#{beforeBalance},#{afterBalance})
+	</insert>
+	<delete id="deleteProdRecharge">
+		delete from prod_recharge where user_id=#{userId}
+	</delete>
+</mapper>

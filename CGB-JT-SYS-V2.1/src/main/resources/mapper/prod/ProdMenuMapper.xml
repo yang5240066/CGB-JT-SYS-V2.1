@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jt.prod.dao.ProdMenuDao">
+	<!-- 使用sql元素可以定义sql片段 -->
+	<sql id="queryWhereId">
+		<where>
+		<!-- 如果name=null或者为空串,就不执行sql语句 -->
+			<if test="name!=null and name!=''">
+				name like concat("%",#{name},"%") and
+			</if>
+				onSale = 1
+		</where>
+	</sql>
+	<select id="getObjectById" resultType="com.jt.prod.entity.ProdMenu">
+		select * from prod_Repertorys
+		where id = #{id}
+	</select>
+	<select id="findPageObjects" resultType="com.jt.prod.entity.ProdMenu">
+		select * from prod_Repertorys
+		<!-- 动态sql -->
+		<include refid="queryWhereId"/>
+		<!-- limit #{startIndex},#{pageSize} -->
+	</select>
+	<select id="getRowCount" resultType="int">
+		select count(*) from prod_Repertorys
+		<include refid="queryWhereId"/>
+	</select>
+	<!-- 基于id执行删除操作,如下语句中当ids的值为空时,
+	sql语句可能存在语法问题,delete语句默认没有返回值-->
+	<delete id="deleteObjects" >
+		delete from prod_Repertorys where id in<!-- 1,2,3,4,5 -->
+		<foreach collection="ids" open="(" 
+		close=")" separator="," item="item">
+			#{item}
+		</foreach> 
+	</delete>
+	<!-- 向数据库中写入数据 -->
+	<insert id="insertObject" >
+		insert into prod_Repertorys 
+		(name,category,price,pnum,description)
+		 values
+		(#{name},#{category},#{price}, 
+		#{pnum},#{description})
+	</insert>
+	<update id="updateObject">
+       update prod_Repertorys
+       set 
+       name=#{name},
+       category=#{category},
+       price=#{price},
+       pnum=#{pnum},
+       description=#{description}
+       where id=#{id}
+    </update>
+    
+    
+     <insert id="insertWuPin">
+    	insert into prod_cart 
+		(name,type,price,userId,number)
+		 values
+		(#{name},#{type},#{price},#{userId},#{number})
+    </insert>
+    
+    <select id="findByUserId" resultType="int">
+    select count(*)
+    from prod_cart
+    where userId=#{userId} and name=#{name}
+    </select>
+    
+    <update id="updateNumber">
+    update prod_cart
+    set number=number+1
+    where userId=#{userId} and name=#{name}
+    </update>
+    
+    
+    
+</mapper>
+
+
+
+

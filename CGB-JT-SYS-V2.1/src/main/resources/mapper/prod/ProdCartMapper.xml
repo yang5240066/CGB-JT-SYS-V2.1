@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jt.prod.dao.ProdCartDao">
+	
+	<select id="doFindObjects" resultType="com.jt.prod.entity.ProdCart">
+		select 
+			sys_users.id user,prod_cart.*
+		from 
+			sys_users,prod_cart
+		where 
+			sys_users.id=prod_cart.userId and sys_users.id=#{id}
+		
+	</select>
+	
+	 <delete id="deleteObjects" >
+    	delete from prod_cart
+    	where id in
+    	<foreach collection="ids" open="(" close=")" item="item" separator="," >
+    		#{item}
+    	</foreach>
+    </delete>
+    
+    
+    
+     <!-- 提取sql元素共性,其它地方需要时可以include -->
+    <sql id="queryWhereId">
+          <where>
+              <if test="userId!=null and userId!=''">
+               userId=#{userId}
+              </if>
+          </where>
+    </sql>
+    <select id="findPageObjects"
+            resultType="com.jt.prod.entity.ProdCart">
+            select * 
+            from prod_cart
+            <include refid="queryWhereId"/>
+            limit #{startIndex},#{pageSize}
+    </select>
+    
+    <select id="getRowCount"
+            resultType="int">
+            select count(*)
+            from prod_cart where userId=#{userId}
+    </select>
+    
+    
+	<insert id="insertObject">
+       insert into prod_order
+       		(userId,status,createTime,paymentTime,totalFee,name,type,number,
+       		price,receiverName,address,
+       		receiverMobile)
+       values
+       		(#{userId},'未付款',#{createTime},#{paymentTime},#{totalFee},#{name},#{type},
+       		#{number},#{price},#{receiverName},
+       		#{address},#{receiverMobile})
+    </insert>
+	
+	<select id="getObjectId" resultType="com.jt.prod.entity.ProdCart">
+		select * 
+            from prod_cart where id=#{id}
+	</select>
+	
+	<insert id="insertWuPin">
+    	insert into prod_cart 
+		(name,type,price,userId,number)
+		 values
+		(#{name},#{type},#{price},#{userId},#{number})
+    </insert>
+    
+    <select id="findByUserId" resultType="int">
+    select count(*)
+    from prod_cart
+    where userId=#{userId} and name=#{name}
+    </select>
+    
+    <update id="updateNumber">
+    update prod_cart
+    set number=number+1
+    where userId=#{userId} and name=#{name}
+    </update>
+    
+    <update id="updateDeNumber">
+    update prod_cart
+    set number=number-1
+    where userId=#{userId} and name=#{name}
+    </update>
+    
+    <select id="deletByUserId" resultType="int">
+    select number
+    from prod_cart
+    where userId=#{userId} and name=#{name}
+    </select>
+	
+	
+	
+</mapper>
+
+
+
+

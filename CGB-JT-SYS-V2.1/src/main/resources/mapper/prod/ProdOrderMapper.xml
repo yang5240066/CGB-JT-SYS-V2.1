@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jt.prod.dao.ProdOrderDao">
+
+
+	<!-- 基于菜单id删除菜单自身信息 -->
+     <delete id="deleteObject" parameterType="int">
+             delete 
+             from prod_order
+             where orderId in
+           		 <!--
+           		 collection="orderId"表示从传进来的结果值,这里是一个数组
+           		 separator="," 表示遍历出来的结果以,隔开
+           		 item="ids"为遍历出来的一条数据取一个名字为ids
+           		   -->
+             <foreach collection="ids" separator="," item="item" open="(" close=")" >
+             	#{item}
+             </foreach>
+     </delete>
+
+
+	<update id="updateObject" parameterType="com.jt.prod.entity.ProdOrder">
+		update prod_order
+		set
+		status=#{status},num=#{num},title=#{title},price=#{price},totalFee=#{totalFee},
+		receiverName=#{receiverName},receiverAddress=#{receiverAddress},receiverMobile=#{receiverMobile}
+		where orderId=#{orderId}
+	</update>
+
+	<insert id="insertObject" parameterType="com.jt.prod.entity.ProdOrder">
+
+		insert into prod_order 
+		(status,createTime,paymentTime,userId,title,num,
+		price,totalFee,receiverName,receiverAddress,receiverMobile)
+		 values
+		('未付款',now(),now(),
+		#{userId},#{title},#{num},#{price},#{totalFee},#{receiverName},
+		#{receiverAddress},#{receiverMobile})
+	</insert>
+	
+	<!-- 使用sql元素可以定义sql片段 -->
+	<sql id="queryWhereId">
+		<where>
+			<!-- 如果name=null或者为空串,就不执行sql语句 -->
+			<if test="orderId!=null and orderId!=''">
+				orderId like concat("%",#{orderId},"%")
+			</if>
+		</where>
+	</sql>
+	
+	<sql id="queryWhereId1">
+		<where>
+			<!-- 如果name=null或者为空串,就不执行sql语句 -->
+			<if test="orderId!=null and orderId!=''">
+				orderId like concat("%",#{orderId},"%")  
+			</if>
+			<if test="status!=null and status!=''">
+				and status=#{status}
+			</if>
+			 <if test="userId!=1">
+				and userId=#{userId}
+			</if> 
+		</where>
+	</sql>
+	
+	<sql id="queryWhereId2">
+		<where>
+			<if test="orderId!=null and orderId!=''">
+				orderId like concat("%",#{orderId},"%")  
+			</if>
+			<!-- 如果name=null或者为空串,就不执行sql语句 -->
+			 <if test="userId!=1 and userId!=null">
+				and userId=#{userId}
+			</if> 
+			 <if test="status!='' and status!=null">
+				and status=#{status}
+			</if>
+		</where>
+	</sql>
+	
+	<select id="findPageObjects" resultType="map">
+		SELECT *
+		from prod_order
+		<include refid="queryWhereId1"></include>
+		order by createTime desc
+		limit #{startIndex},#{pageSize}
+	</select>
+	
+	<select id="getRowCount" resultType="int">
+		select count(*)
+		from prod_order
+		<include refid="queryWhereId2"></include>
+	</select>
+	
+	
+</mapper>
+
+
+
+

@@ -1,0 +1,177 @@
+<div class="row">
+	<div class="col-xs-12">
+		<div class="box">
+			<div class="box-header">
+				<h3 class="box-title">支付页面</h3>
+
+
+				<div class="box-body table-responsive no-padding">
+					<form>
+						<table class="table table-hover table-bordered">
+							<thead>
+								<tr>
+									<th><input type="checkbox" id="checkAll">全选</th>
+									<th>定单Id</th>
+									<th>状态</th>
+									<th>创建时间</th>
+									<th>付款时间</th>
+									<th>用户id</th>
+									<th>商品名称</th>
+									<th>商品购买数量</th>
+									<th>商品单价</th>
+									<th>商品总金额</th>
+									<th>收货人姓名</th>
+									<th>收货地址</th>
+									<th>移动电话</th>
+								</tr>
+							</thead>
+							<!-- doGetObjects在此处添加数据 -->
+							<tbody id="tbodyId">
+							</tbody>
+						</table>
+					</form>
+				</div>
+				<!-- /.box-body -->
+				<div id="pageId" class="box-footer clearfix"></div>
+			</div>
+			<!-- /.box -->
+		</div>
+	</div>
+	<div class="col-sm-4">
+		<div class="form-horizontal" role="form">
+			<div class="form-group">
+				<label for="" class="col-sm-4 control-label">支付金额</label>
+				<div class="col-sm-4">
+					<p id="total_price" class="form-control-static"></p>
+				</div>
+			</div>
+			<div class="form-group">
+				<label for="" class="col-sm-4 control-label">支付密码</label>
+				<div class="col-sm-8">
+					<input type="password" class="form-control" id="Pwd1"
+						placeholder="支付密码">
+				</div>
+			</div>
+			<div class="pull-right">
+				<button class="btn btn-primary" id="forget">忘记密码</button>
+				<button class="btn btn-primary" id="pay">确认支付</button>
+			</div>
+		</div>
+	</div>
+
+	<script type="text/javascript">
+		$(function() {
+			checkIsHasPayPassword();
+			$(".pull-right").on("click", "#forget", doShowEditDialog);
+			doHandleOrderId();
+			$(".pull-right").on("click", "#pay", doPay);
+		});
+		function checkIsHasPayPassword() {
+			var id = $(".user-panel .pull-left p").prop("id");
+			var url = "prod/wallet/doCheckIsHasPayPassword.do";
+			var params = {
+				userId : id
+			};
+			$.post(url, params, function(result) {
+				console.log(result);
+				if (!result.data) {
+					doShowEditDialog();
+				}
+			})
+		}
+		;
+		function doShowEditDialog() {
+			//只有添加的版本
+			var url = "prod/wallet/doSetPayPasswordUI.do"
+			var title = "设置支付密码";
+	
+			$("#myModal .modal-body").load(url, function() {
+				//设置模态框的标题
+				$("#myModalLabel").html(title);
+				//页面加载完成显示模态框
+				$("#myModal").modal("show");
+			})
+		}
+		function doHandleOrderId() {
+			var orderId = $("#mainContentId").data("orderId");
+			//$("#mainContentId").removeData("orderId");
+			var url = "prod/pay/doFindOrderById.do";
+			var params = {
+				id : orderId
+			}
+			$.post(url, params, function(result) {
+				console.log(result);
+				doHandleResponseResult(result);
+				$("#total_price").text(result.data.totalFee);
+			}, "json")
+		}
+		function doHandleResponseResult(result) {
+			if (result.state == 1) { //ok
+				//更新table中tbody内部的数据
+				doSetTableBodyRows(result.data); //将数据呈现在页面上 
+			//更新页面page.html分页数据
+			} else {
+				alert(result.message);
+			}
+		}
+	
+		/*设置表格内容*/
+		function doSetTableBodyRows(records) {
+			//1.获取tbody对象，并清空对象
+			var tBody = $("#tbodyId");
+			tBody.empty();
+			//2.迭代records记录，并将其内容追加到tbody
+	
+			//2.1 构建tr对象
+			var tr = $("<tr></tr>");
+			tr.data("rowData", records);
+			//2.2 构建tds对象
+			var tds = createdTds(records);
+			//2.3 将tds追加到tr中
+			tr.append(tds);
+			//2.4 将tr追加到tbody中
+			tBody.append(tr);
+	
+		}
+	
+		function createdTds(row) {
+			var userId = $(".user-panel .pull-left p").prop("id")
+			var btnBuyer = "<td><button type='button' class='btn-pay'>付款</button></td>"
+			var btnSeller = "<td><button type='button' class='btn btn-default btn-update'>update</button></td>"
+			var btn = (userId == 1) ? btnSeller : btnBuyer
+			var tds = "<td><input type='checkbox' class='cBox' name='cItem' value='" + row.id + "'></td>" +
+				"<td id='orderId'>" + row.orderId + "</td>" +
+				"<td>" + row.status + "</td>" +
+				"<td>" + new Date(row.createTime).toLocaleDateString() + "</td>" +
+				"<td>" + new Date(row.paymentTime).toLocaleDateString() + "</td>" +
+				"<td>" + row.userId + "</td>" +
+				"<td>" + row.title + "</td>" +
+				"<td>" + row.num + "</td>" +
+				"<td>" + row.price + "</td>" +
+				"<td>" + row.totalFee + "</td>" +
+				"<td>" + row.receiverName + "</td>" +
+				"<td>" + row.receiverAddress + "</td>" +
+				"<td>" + row.receiverMobile + "</td>";
+			return tds;
+		}
+		function doPay() {
+			var userId = $(".user-panel .pull-left p").prop("id");
+			//var orderId = $("#orderId").val();
+			var orderId = $("#mainContentId").data("orderId");
+			var pw = $("#Pwd1").val()
+			var price = $("#total_price").text();
+			var url = "prod/pay/doPay.do";
+			params = {
+				"userId" : userId,
+				"orderId" : orderId,
+				"price" : price,
+				"password" : pw
+			}
+			$.post(url, params, function(result) {
+				alert(result.message);
+				if (result.state == 1) {
+					$("#mainContentId").load("prod/order/doOrderListUI.do")
+				}
+			}, "json")
+		}
+	</script>

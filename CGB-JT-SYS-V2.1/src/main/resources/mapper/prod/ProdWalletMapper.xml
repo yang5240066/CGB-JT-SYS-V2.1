@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jt.prod.dao.ProdWalletDao">
+	<select id="findProdWalletByUserId" resultType="com.jt.prod.entity.ProdWallet">
+		select * from prod_wallet where userId = #{userId}
+	</select>
+	<update id="updateProdWalletBalance">
+		update prod_wallet set balance=#{balance} where userId=#{userId}
+	</update>
+	<update id="updateProdWalletPayPassword">
+		update prod_wallet set payPassword=#{payPassword} where userId=#{userId}
+	</update>
+	<insert id="insertProdWallet">
+		insert into prod_wallet (userId,balance,payPassword) value (#{userId},#{balance},#{payPassword})
+	</insert>
+	<delete id="deleteProdWallet">
+		delete from prod_wallet where userId=#{userId}
+	</delete>
+	<select id="findBalanceByUserId" resultType="Double">
+		select balance from prod_wallet where userId = #{userId}
+	</select>
+</mapper>

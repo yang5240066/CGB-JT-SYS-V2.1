@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ <mapper namespace="com.jt.prod.dao.ProdRepertoryDao">
+ 	<select id="findObjectById">
+ 		select *from 
+ 		prod_repertorys
+ 		where id=#{id}
+ 		
+ 	</select>
+
+ 	<insert id="insertObject" >
+		insert into prod_repertorys 
+		(name,category,price,pnum,description)
+		 values
+		(#{name},#{category},#{price},
+     	  #{pnum},#{description})
+	</insert>
+	<update id="updateObject">
+       update prod_repertorys
+       set 
+       name=#{name},
+       category=#{category},
+       price=#{price},
+       pnum=#{pnum},
+       description=#{description}
+       where id=#{id}
+    </update>
+ 
+ 
+ 
+ 
+ 	
+	<delete id="deleteObjects">
+		delete from prod_repertorys where id in
+		<foreach collection="ids" open="(" 
+		close=")" separator="," item="item">
+			#{item}
+		</foreach>
+	</delete> 
+ 
+ 
+ 
+ 	<sql id="whereQuery">
+ 		<where>
+ 			<if test="name!=null and name!=''">
+ 				name like concat("%",#{name},"%")
+ 			</if>
+ 		
+ 		</where>
+ 
+ 	</sql>
+ 	<select id="doFindPageObject" resultType="com.jt.prod.entity.ProdRepertory">
+ 		select *
+ 		from prod_repertorys
+ 		<include refid="whereQuery"/> 
+ 		limit #{startIndex},#{pageSize}
+ 	
+ 	</select>
+ 	<select id="rowCount" resultType="int">
+ 		select count(*)
+ 		from prod_repertorys
+ 		<include refid="whereQuery"/>
+ 	</select>
+ 	
+ 	<select id="selectPnumByName" resultType="int">
+ 		select pnum from prod_repertorys
+ 		where name = #{name}
+ 	</select>
+ 	<update id="updatePnumByName">
+ 		update prod_repertorys set pnum = #{pnum}
+ 		where name = #{name}
+  	</update>
+ 	
+ 	<update id="updateStatusById">
+ 		update prod_repertorys set onSale = #{status}
+ 		where id = #{id}
+  	</update>
+ </mapper>
+  
+  
+  

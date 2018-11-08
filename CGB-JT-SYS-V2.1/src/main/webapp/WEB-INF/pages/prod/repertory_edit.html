@@ -1,0 +1,115 @@
+<!-- Horizontal Form -->
+<div class="box box-info">
+	<!-- form start -->
+	<form class="form-horizontal">
+		<div class="box-body">
+			<div class="form-group">
+				<label for="nameId" class="col-sm-2 control-label">商品名称</label>
+				<div class="col-sm-10">
+					<input type="text" class="form-control" name="name" id="nameId"
+						placeholder="名称">
+				</div>
+			</div>
+			<div class="form-group">
+				<label for="valueId" class="col-sm-2 control-label">商品种类</label>
+				<div class="col-sm-10">
+					<input type="text" class="form-control" name="category" id="categoryId"
+						placeholder="种类">
+				</div>
+			</div>
+			<div class="form-group">
+				<label for="valueId" class="col-sm-2 control-label">商品单价</label>
+				<div class="col-sm-10">
+					<input type="text" class="form-control" name="price" id="priceId"
+						placeholder="单价">
+				</div>
+			</div>
+			<div class="form-group">
+				<label for="valueId" class="col-sm-2 control-label">库存数量</label>
+				<div class="col-sm-10">
+					<input type="text" class="form-control" name="pnum" id="pnumId"
+						placeholder="数量">
+				</div>
+			</div>
+			<div class="form-group">
+				<label for="noteId" class="col-sm-2 control-label">商品描述</label>
+				<div class="col-sm-10">
+					<input type="text" class="form-control" name="description" id="descId"
+						placeholder="描述">
+				</div>
+			</div>
+		</div>
+		<!-- /.box-body -->
+	</form>
+</div>
+<script type="text/javascript">
+
+	 $(function() {
+		$("#myModal").on("click", ".btn-save", doSaveOrUpdate);
+		//注册模态框隐藏时的事件监听
+			//当模态框隐藏的时候,执行...操作
+		$('#myModal').on('hidden.bs.modal', function(e) {
+			//移除myMoal对象上绑定的事件
+			//假如不移除有可能会重现表单重复提交
+			$("#myModal").off();//移除这个标签上的所有事件
+			//模态框隐藏的时候,移除模态框上绑定的数据,不传参数就是移除所有的数据key value
+			$("#myModal").removeData("rowData");//对应函数data
+		});
+		//加载或模态框,获取模态框中绑定的数据
+		var rowData = $("#myModal").data("rowData")
+		//假如模态框上有绑定的数据,则通过此数据初始化编辑页面
+		if(rowData) doInitEditFormData(rowData)
+		function doInitEditFormData(rowData) {
+			$("#nameId").val(rowData.name)
+			$("#categoryId").val(rowData.category)
+			$("#priceId").val(rowData.price)
+			$("#pnumId").val(rowData.pnum)
+			$("#descId").val(rowData.description)
+		}
+	})
+	
+	//保存或更新配置信息
+	function doSaveOrUpdate() {
+		//1.获取页面输入的表单数据
+		var params = doGetFormData();//json对象
+		var rowData = $("#myModal").data("rowData")
+		console.log(rowData)
+		//2.定义url地址
+		//假如是修改需要再向服务端提交一个id值
+		 if(rowData) params.id=rowData.id;//修改时
+		 //2.url
+		 var updateUrl="prod/repertory/doUpdateObject.do";
+		 var insertUrl="prod/repertory/doSaveObject.do";
+		 //有数据,就是update
+		 var url=rowData?updateUrl:insertUrl;
+		//3.将数据异步提交到url对应的地址
+		 $.post(url,params,function(result){
+			if(result.state==1){
+				alert(result.message)
+				$("#myModal").modal('hide');//先隐藏再查询
+    		    doGetObjects();
+			} else{
+				alert(result.message)
+			}
+		}) 
+		
+	}
+	//获取表单数据
+	function doGetFormData(){
+		var params = {
+				name: $("#nameId").val(),
+				category: $("#categoryId").val(),
+				price: $("#priceId").val(),
+				pnum: $("#pnumId").val(),
+				description: $("#descId").val(),
+		}
+		return params;
+	} 
+</script>
+
+
+
+
+
+
+

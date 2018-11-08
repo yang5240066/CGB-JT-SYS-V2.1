@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jt.sys.dao.SysConfigDao">
+	<!-- 使用sql元素可以定义sql片段 -->
+	<sql id="queryWhereId">
+		<where>
+		<!-- 如果name=null或者为空串,就不执行sql语句 -->
+			<if test="name!=null and name!=''">
+				name like concat("%",#{name},"%")
+			</if>
+		</where>
+	</sql>
+	<select id="findPageObjects" resultType="com.jt.sys.entity.SysConfig">
+		select * from sys_configs
+		<!-- 动态sql -->
+		<include refid="queryWhereId"/>
+		order by createdTime desc
+		limit #{startIndex},#{pageSize}
+	</select>
+	<select id="getRowCount" resultType="int">
+		select count(*) from sys_configs 
+		<include refid="queryWhereId"/>
+	</select>
+	<!-- 基于id执行删除操作,如下语句中当ids的值为空时,
+	sql语句可能存在语法问题,delete语句默认没有返回值-->
+	<delete id="deleteObjects" >
+		delete from sys_configs where id in<!-- 1,2,3,4,5 -->
+		<foreach collection="ids" open="(" 
+		close=")" separator="," item="item">
+			#{item}
+		</foreach> 
+	</delete>
+	<!-- 向数据库中写入数据 -->
+	<insert id="insertObject" >
+		insert into sys_configs 
+		(name,value,note,createdTime,
+     	  modifiedTime,createdUser,modifiedUser)
+		 values
+		(#{name},#{value},#{note},now(),now(),
+     	  #{createdUser},#{modifiedUser})
+	</insert>
+	<update id="updateObject">
+       update sys_configs
+       set 
+       name=#{name},
+       value=#{value},
+       note=#{note},
+       modifiedTime=now(),
+       modifiedUser=#{modifiedUser}
+       where id=#{id}
+    </update>
+</mapper>
+
+
+
+
